@@ -1,3 +1,4 @@
+import {supabaseHeaders} from './supabase-headers.js'
 const url=()=>process.env.SUPABASE_URL?.replace(/\/$/,'')
 const readKey=()=>process.env.SUPABASE_ANON_KEY||process.env.SUPABASE_PUBLISHABLE_KEY
 export function databaseReady(){return !!(url()&&readKey())}
@@ -5,7 +6,7 @@ export function sharedWritesReady(){return databaseReady()&&!!(process.env.SUPAB
 export async function rpc(name,body,{write=false,signal}={}){
  const key=write?process.env.SUPABASE_SERVICE_ROLE_KEY:readKey()
  if(!url()||!key)throw new Error('Shared price storage is not configured.')
- const response=await fetch(url()+'/rest/v1/rpc/'+name,{method:'POST',headers:{apikey:key,...(key.startsWith('eyJ')?{Authorization:'Bearer '+key}:{}),'Content-Type':'application/json'},body:JSON.stringify(body),signal:signal?AbortSignal.any([signal,AbortSignal.timeout(15000)]):AbortSignal.timeout(15000)})
+ const response=await fetch(url()+'/rest/v1/rpc/'+name,{method:'POST',headers:supabaseHeaders(key),body:JSON.stringify(body),signal:signal?AbortSignal.any([signal,AbortSignal.timeout(15000)]):AbortSignal.timeout(15000)})
  const data=await response.json().catch(()=>null)
  if(!response.ok){const message=data?.message||'The price database is temporarily unavailable.';throw new Error(message)}
  return data

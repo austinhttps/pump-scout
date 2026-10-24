@@ -1,3 +1,4 @@
+import {supabaseHeaders} from '../server/supabase-headers.js'
 // Import genuine U.S. state Overpass extracts; never invent prices or station records.
 import fs from 'node:fs/promises'
 import path from 'node:path'
@@ -15,7 +16,7 @@ for(const {code,filename}of files){
  const data=JSON.parse(await fs.readFile(filename,'utf8'))
  if(!Array.isArray(data.elements))throw new Error(code+'.json must be an Overpass extract with an elements array.')
  const rows=convertStations(data.elements).map(s=>({id:s.id,name:s.name.slice(0,100),brand:s.brand,address:s.address,city:s.city,zip:s.zip,state_code:code,country_code:'US',lat:s.lat,lng:s.lng,membership:s.membership,fuels:s.fuels||null,source:'openstreetmap',is_active:true}))
- for(let i=0;i<rows.length;i+=500){const response=await fetch(url+'/rest/v1/stations?on_conflict=id',{method:'POST',headers:{apikey:key,Authorization:'Bearer '+key,'Content-Type':'application/json',Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify(rows.slice(i,i+500)),signal:AbortSignal.timeout(30000)});if(!response.ok)throw new Error('Import failed for '+code+': '+await response.text());imported+=Math.min(500,rows.length-i)}
+ for(let i=0;i<rows.length;i+=500){const response=await fetch(url+'/rest/v1/stations?on_conflict=id',{method:'POST',headers:{...supabaseHeaders(key),Prefer:'resolution=merge-duplicates,return=minimal'},body:JSON.stringify(rows.slice(i,i+500)),signal:AbortSignal.timeout(30000)});if(!response.ok)throw new Error('Import failed for '+code+': '+await response.text());imported+=Math.min(500,rows.length-i)}
  console.log(code+': '+rows.length+' genuine station listings imported.')
 }
 console.log('Completed '+files.length+' state extracts, '+imported+' station upserts. Existing crowdsourced price fields are preserved.')

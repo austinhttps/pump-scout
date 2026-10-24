@@ -37,3 +37,5 @@ The performance fixture is synthetic, used only by scripts/benchmark-clusters.mj
 - No Supabase users, external accounts, or production database records were deleted or changed; this environment had no configured application database.
 
 Additional deployed UI checks: Hawaii shortcut navigated correctly; E85 selection and Shell brand favorite remained selected after reload; zero login controls were present; mobile content width was 375 px in a 390 px viewport (no horizontal overflow).
+
+Supabase setup follow-up: modern publishable/secret key compatibility fixed with three regression tests (25 tests pass). Required Vercel Production variable names are present. Database execution/import remains unverified: Supabase MCP initialization returned Auth required; deployment HTTP verification returned a Vercel permission error; no state extract JSON files are present.
