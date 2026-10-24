@@ -1,48 +1,97 @@
-# PumpScout
-Responsive React + TypeScript + Vite gas-price map. Tailwind CSS, Lucide icons, and a lifecycle-managed Leaflet React component. Default area: Raleigh, NC.
+# PumpScout 2 — public U.S. gas-price map
+
+Production: https://pump-scout-nine.vercel.app/
+
+## What changed
+- No signup, login, user sessions, account profiles, protected routes, or authentication SDK.
+- Fuel choice, favorite brands, recent searches, bookmarks, theme, and optional report nickname use browser local storage.
+- Removed Raleigh seed records and invented prices. The default is a U.S. overview, with Alaska and Hawaii shortcuts.
+- Leaflet emits normalized active west/south/east/north bounds after moveend and zoomend. Requests are debounced, superseded requests are aborted, and stale responses cannot replace the current view.
+- Supercluster 8.0.1 runs inside a dedicated Web Worker. Only visible clusters/markers reach Leaflet; the list renders 60 cards at a time.
+- Price statistics use fresh raw station objects inside the exact active viewport. Overview aggregates do not produce made-up price averages.
 
 ## Run
-Requires Node 22.12+ (Node 24 recommended).
+Node 24 is recommended.
 ```sh
 npm ci
 npm run dev
 npm test
+npm run test:scale
 npm run build
 ```
-An interactive local demo works without credentials. The banner labels sample data clearly. Demo reports, reviews, optional photos, bookmarks, theme, and contributor profile persist in this browser. The sample station addresses and prices are illustrative and must not be treated as verified listings or current retail prices.
+Vite includes the same public API handlers for local development. Vercel deploys the api/ handlers as public Node.js functions.
 
-## Connect Supabase
-1. Create a Supabase project.
-2. Run `supabase/migrations/001_initial.sql` in its SQL editor once.
-3. Import verified station listings into `public.stations`. `supabase/seed.sql` provides the demo Raleigh station catalog only; verify/correct it before production. It intentionally adds no price reports to the live database.
-4. Copy `.env.example` to `.env.local`. Set `VITE_SUPABASE_URL` and the public publishable/anon key in `VITE_SUPABASE_ANON_KEY`. Never use a service-role key in this frontend.
-5. In Supabase Authentication URL Configuration, add your deployed origin and local origin (`http://127.0.0.1:5173`) to allowed redirect URLs. Enable email auth. The sign-in UI supports a magic link and an email OTP if your email template includes a code.
-6. Restart Vite, or set the two variables on your hosting project and rebuild.
-When configured, the app loads ONLY shared database records. It does not silently fall back to sample data when a live request fails. Errors have a retry action.
+## Current data modes
+Without database configuration, the site discovers real OpenStreetMap gas stations in a city-size viewport through a server proxy. City, ZIP, address, and state searches work nationwide; all 50 state names/codes plus DC resolve without calling a geocoder. Zoomed-out views ask users to search or zoom in instead of downloading a national directory from a public service.
 
-Supabase integration uses its official Auth, PostgREST, Storage, and Realtime HTTP/WebSocket interfaces directly, without a bundled SDK. Auth refreshes before API calls; reports refresh through Postgres Changes, with a 45-second polling fallback. Sessions persist on the device. The frontend public key does not authorize writes; row-level security requires a signed-in author.
+No current retail prices are fabricated. Anonymous manual reports work immediately in local storage and are explicitly labeled as visible only in that browser. Public shared reports become available when the database read/write configuration is present.
 
-## Database security
-- Public read-only station catalog; no client station insertion or modification.
-- Append-only price reports. The database checks the author, allowed fuel, price bounds, handle, and photo ownership prefix.
-- A database trigger supplies report timestamps and serializes/throttles reports to one per account per 30 seconds.
-- One review per signed-in account per station; authors can update their own review only.
-- Price photos use a private 5 MB JPEG/PNG bucket, scoped to the uploader.
-- The latest-price view uses invoker security and exposes no email or photo path.
-- No service-role secrets, admin endpoints, or client write access to seed data.
+This public-directory fallback is for light use, not a high-volume data service. National overview clusters and sustained production traffic require a populated PostGIS catalog. Set OVERPASS_URL to your hosted provider for directory fallback traffic, and GEOCODER_URL to a compatible hosted/self-hosted Nominatim service for higher-volume geocoding. Default public services have capacity/use limits. Searches are submit-only, browser-cached, and CDN-cached; no autocomplete requests are sent.
 
-Before a public launch, test the migration against a fresh Supabase project and test two separate users for cross-account writes and private photo access. Those integration tests require a configured project. Account-level rate limiting is not a substitute for abuse monitoring or moderation.
+## Supabase setup — no user accounts
+Fresh database:
+1. Run supabase/migrations/001_initial.sql.
+2. Run supabase/migrations/003_spatial_api.sql.
 
-## Map and search
-Leaflet loads lazily and is removed cleanly on unmount. CARTO Voyager tiles use the browser basemap key in VITE_CARTO_API_KEY. The key is configured outside tracked source. Raster browser keys are visible in browser tile requests. Without a key, or if CARTO requests fail, the map uses key-free OpenStreetMap tiles. Muted, full-color, and dark map treatments are available. Attribution remains visible. External tile outages show an error without breaking the station list.
+Existing v1 database:
+1. Run supabase/migrations/002_remove_accounts.sql instead of rerunning the changed fresh-install script.
+2. Run supabase/migrations/003_spatial_api.sql.
 
-Location search uses submit-only Nominatim, caches successful searches locally, limits requests to at most one per 1.1 seconds per browser, restricts to the U.S., and times out with a useful message. It does not send autocomplete requests. Set `VITE_GEOCODER_URL` to a compatible provider endpoint for higher traffic; a production multi-user deployment needs an appropriate hosted/self-hosted provider or shared proxy to meet provider rate limits. Precise geolocation is used locally to center the map, not stored in a user profile.
+The upgrade preserves station/report history, removes application references to user identities and account-owned writes, and retires the 16 original sample station IDs. Supabase's platform-owned identity schema is not dropped. The application never calls that service.
 
-Markers compare fresh (under 24h) local prices: lowest 20% green, highest 20% red, the remainder yellow. Ties share a tier. Local statistics use all fresh prices in the search radius; membership and saved-only filters affect results, not that local baseline. Savings use the local average minus the lowest price, for 15 gallons. Prices are cash USD/gallon; they are crowdsourced, not independently verified.
+PostGIS is installed in the extensions schema. If your existing PostGIS extension uses a different schema, adapt the qualified geometry/functions before applying the migration.
 
-## Deploy
-The production output is `dist/`. Sites metadata is in `.openai/hosting.json`; the Vercel configuration is in `vercel.json`. The same source can be pushed to a new GitHub repository and imported into Vercel. Supabase browser environment variables are baked into each frontend build, so rebuild after changing them.
+Configure server environment variables (copy .env.example to ignored .env.local for local work):
+- SUPABASE_URL
+- SUPABASE_ANON_KEY (or SUPABASE_PUBLISHABLE_KEY) for public read RPCs
+- SUPABASE_SERVICE_ROLE_KEY for server-side validated report writes
+- REPORT_RATE_LIMIT_SALT: a random server-side value, used only to hash a daily network rate-limit key
 
-## Verification
-`npm test` checks geographic distances, percentile ties, report validation, stale prices, empty averages, tooltip escaping, and successful empty HTTP write responses. `npm run build` runs strict TypeScript checking and a production build. See `VERIFICATION.md` for environment-specific results and remaining integration checks.
+None of these variables has a VITE_ prefix; they are not sent to the browser. VITE_CARTO_API_KEY is intentionally a browser raster-tile key. No user credentials, accounts, anonymous-auth users, cookies, bearer sessions, or login tokens are created by the application.
 
+## Spatial schema and endpoints
+The stations.location geometry(Point,4326) column is generated from longitude/latitude and has a partial GiST index on active stations.
+
+- viewport_envelopes(min_long,min_lat,max_long,max_lat) creates ST_MakeEnvelope(...,4326) polygons. Crossing the date line returns two envelopes.
+- stations_in_view uses the index-aware && predicate, a stable ID cursor, and bounded pages. Per-station cached price JSON avoids repeated global latest-price scans and huge IN lists.
+- station_clusters_in_view returns compact server-side overview clusters below zoom 8. Raw local results above that zoom are clustered again by the worker.
+- GET /api/stations forwards the exact active map bounds and zoom, caches responses briefly, and returns cursor pages.
+- GET /api/geocode resolves state names/codes locally or proxies a U.S.-restricted place search.
+- POST /api/reports accepts a station ID, fuel, price, and optional nickname. It has no login requirement. Validation and a database-atomic rate limit protect the public write endpoint.
+- submit_public_price is executable only by the server role, not arbitrary direct anonymous database clients. Visitors still submit without accounts.
+- Report timestamps come from the database. Updates lock the station row before replacing its cached price.
+- Direct public table writes are revoked. The rate-limit table is private and contains a daily salted hash, not a raw IP or user account. Expired keys can be removed with a database maintenance job.
+
+A viewport page has at most 1,000 stations. The client follows cursors up to 50,000 raw points and explicitly labels a partial result if that bound is reached. Overview clusters prevent whole-country raw payloads. Filters affect rendered results; statistics use all fresh reports for the selected fuel inside the exact viewport.
+
+## Import a genuine all-state catalog
+Never use a synthetic generator for production station data.
+
+Collect authorized U.S. state Overpass extracts with an elements array, named AL.json through WY.json (all 50 postal codes; DC.json optional). A typical state query is:
+```text
+[out:json][timeout:180];
+area["ISO3166-2"="US-CA"]->.state;
+nwr["amenity"="fuel"](area.state);
+out center tags;
+```
+For production, obtain bulk extracts or run this against your appropriately provisioned provider rather than repeatedly burdening public instances.
+
+```sh
+node --env-file=.env.local scripts/import-stations.mjs /path/to/state-extracts
+```
+The importer checks that all 50 state files exist before writing, normalizes real OSM elements, and upserts in batches of 500. Use --allow-partial for an intentional incremental import. It does not invent prices, delete missing stations, or replace existing price fields. The input extracts must cover the stated U.S. state. Attribute OSM data under ODbL and follow the data provider's terms.
+
+## Verification and limits
+See VERIFICATION.md. Automated coverage includes viewport/date-line behavior, all state searches, API validation, anonymous reports, rate-limit responses, empty responses, stale prices, and tooltip escaping. The actual worker is benchmarked with a separately labeled 100,000-point synthetic fixture. It is never imported into the app.
+
+The SQL scripts still require execution against a configured Supabase/PostGIS project. No production database connection or full national catalog has been provisioned in this workspace. Public directory coverage and prices are crowdsourced and not independently verified.
+
+## Primary references
+- https://supabase.com/docs/guides/database/extensions/postgis
+- https://postgis.net/docs/ST_MakeEnvelope.html
+- https://github.com/mapbox/supercluster
+- https://vercel.com/docs/functions/runtimes/node-js
+- https://operations.osmfoundation.org/policies/nominatim/
+- https://wiki.openstreetmap.org/wiki/Overpass_API
+
+Pinned Supercluster and KDBush upstream sources, provenance, and ISC licenses are in vendor/.

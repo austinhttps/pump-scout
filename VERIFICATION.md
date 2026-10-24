@@ -1,29 +1,37 @@
-# Verification — October 24, 2026
+# Nationwide refactor verification — October 24, 2026
 
 ## Passed
-- Strict TypeScript checking and Vite production build.
-- 9 automated tests: geographic distances; percentile tiers and ties; empty averages; input validation; 24-hour freshness; tooltip escaping; empty successful insert/logout responses; API errors; JSON response parsing.
-- Server-render smoke check: the default demo rendered 16 stations with search and reporting controls.
-- Deployed browser verification at desktop 1440×1080 and mobile 390×844.
-- CARTO Voyager tiles with the supplied browser basemap key, attribution, map zoom controls, and marker detail dialogs.
-- Regular/E85 filtering (16 versus 2 stations), membership filtering (16 versus 14), saved stations (one saved result), station details, timestamps and reporter handles.
-- Demo price submission immediately updated the station and persisted after reload.
-- Demo review submission displayed one saved review.
-- City geocoding moved the map to Cary, NC; searching Raleigh restored the default area.
-- Light/dark theme switching retained Leaflet container classes, overflow containment, and map tiles.
-- Mobile stacked map/list, bottom search, saved-station access, and no horizontal page overflow at the checked size.
+- Strict TypeScript check and Vite production build.
+- 22 automated tests covering:
+  - Exact viewport containment; date-line splits and nearest rendered world copy.
+  - All 50 state names/codes plus DC, including Alaska and Hawaii.
+  - Public API bounds validation and SQL-like input rejection.
+  - Anonymous reports without a user/session, optional nickname, private salted network throttling, and HTTP 429.
+  - Explicit behavior when shared storage is missing.
+  - No fabricated national or Raleigh fallback data.
+  - Empty write responses, price validation, freshness, and escaped tooltip strings.
+- Actual Supercluster worker benchmark with a separate synthetic test fixture:
+  - 100,000 input points, all 100,000 represented.
+  - 176 rendered overview features.
+  - Worker index construction plus transfer: 1,004 ms on this test run.
+  - Date-line Alaska query: 5 ms, 171 features.
+- Deployed Vercel public UI loads without login/account controls.
+- Deployed city geocoding moved the map to Seattle, WA.
+- No signIn/signOut/session-validation/auth-client or auth.users references remain in application/API code.
 
-## Not integration-tested
-- Supabase email sign-in, refresh, shared price persistence, cross-user RLS enforcement, private photo access, database throttling, and realtime updates: a Supabase project has not been configured.
-- The SQL migration and seed are included but have not been run against a database.
-- Real geolocation permissions and uploaded photo files were not exercised in the browser.
-- Source review was performed during implementation; no separate automated Code Review service was available.
+The performance fixture is synthetic, used only by scripts/benchmark-clusters.mjs, and never included as application station data. These timings are local measurements, not a production traffic or database load test.
 
-## Hosting and source
-- Vercel production: https://pump-scout-nine.vercel.app/
+## Current external limits
+- Public Overpass providers were unreachable during deployed directory checks. The app reports this failure and offers retry rather than inventing station records or prices.
+- A Supabase/PostGIS project is not configured here. SQL migrations, RLS/role behavior, query plans, shared anonymous writes, and import of a genuine 50-state catalog have not been exercised against a live database.
+- supabase/verify_spatial.sql supplies rollback-only checks and an EXPLAIN query for a configured test database.
+- Manual reporting API behavior is tested with mocked database responses. The current deployment explicitly labels unconnected shared storage; local manual price handling is preserved in code.
+- A high-volume production launch needs the PostGIS setup and real data import described in README.md. Default public directory/geocoder services are fallback infrastructure, not a high-volume SLA.
+- No raw IP addresses or account IDs are stored by the new reporting schema. A private, daily salted network hash is used only for rate limiting.
+
+## Deployment and source
+- Public URL: https://pump-scout-nine.vercel.app/
 - Vercel project: prj_QzK1Tvapr50jNaZc2cihWdoXpTRk
-- CARTO key configured through Vercel environment variables and ignored local configuration. It is absent from tracked source and the source archive. Browser basemap keys are visible in client tile requests.
-- Sites project was registered, but source synchronization was blocked by the environment's Git network/DNS restriction; no Sites publication is claimed.
-- No matching GitHub repository was found. The connector does not expose repository creation, and browser repository setup required signing in. Source is committed locally and packaged for transfer.
-- Prices and station catalog are illustrative demo data, not a live verified retail-price feed. Demo submissions stay in the browser.
-
+- Source, migrations, importer, test scripts, and pinned library licenses are packaged together.
+- The browser-visible CARTO key remains outside tracked source, in local/Vercel environment configuration.
+- No Supabase users, external accounts, or production database records were deleted or changed; this environment had no configured application database.

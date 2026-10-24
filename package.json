@@ -1,13 +1,14 @@
 {
   "name": "pump-scout",
   "private": true,
-  "version": "1.0.0",
+  "version": "2.0.0",
   "type": "module",
   "scripts": {
     "dev": "vite --host 127.0.0.1",
     "build": "tsc -b && vite build",
     "preview": "vite preview --host 127.0.0.1",
-    "test": "node --experimental-strip-types --test tests/*.test.ts"
+    "test": "node --experimental-strip-types --test tests/*.test.ts",
+    "test:scale": "node scripts/benchmark-clusters.mjs"
   },
   "dependencies": {
     "@tailwindcss/vite": "4.3.3",
