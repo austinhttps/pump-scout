@@ -95,3 +95,38 @@ The SQL scripts still require execution against a configured Supabase/PostGIS pr
 - https://wiki.openstreetmap.org/wiki/Overpass_API
 
 Pinned Supercluster and KDBush upstream sources, provenance, and ISC licenses are in vendor/.
+
+## Automated nationwide download and import
+
+The downloader uses a sequential Overpass query for each of the 50 state boundaries plus DC, including Alaska. It requests nodes, ways, and relations with center coordinates. Configure OVERPASS_URL for a provider whose terms and capacity permit nationwide bulk queries; do not treat public fallback servers as a production bulk service. This pipeline accepts Overpass JSON, not Geofabrik PBF. An empty or partial extract fails instead of silently declaring a state complete. OSM coverage is crowdsourced and is not a completeness guarantee.
+
+Add these server-only settings to ignored .env.local (never commit credentials):
+
+```text
+SUPABASE_URL=your-project-url
+SUPABASE_SERVICE_ROLE_KEY=your-server-secret-key
+OVERPASS_URL=your-authorized-provider-interpreter-url
+```
+
+Vercel Production variables do not automatically populate this local file. Keep its existing map configuration. Never use a VITE_ prefix for the server key.
+
+From the project directory:
+
+```powershell
+npm run stations:sync
+npm run verify:live
+```
+
+Download files are saved atomically in ignored data/station-extracts. Failed runs can resume using valid cached states; idempotent upserts allow safe reruns after interrupted batches. Four download attempts use exponential delays. Queries are sequential with a default 45-second gap. IMPORT_DELAY_MS can adapt the gap to provider requirements. IMPORT_STATES=NC limits the run to a deliberate partial import; leave unset for all states plus DC.
+
+For a fresh directory snapshot, run:
+
+```powershell
+npm run stations:sync -- --refresh
+```
+
+Use that command for a daily externally scheduled background job after the first successful verified run, with credentials in its secret store, a single concurrent run, and failure alerts. This change does not create or enable a scheduler. Existing reported prices are preserved. Missing stations are not automatically deleted or retired: a later lifecycle process must reconcile closures safely. Cached files are reused indefinitely unless --refresh is supplied. New source data does not imply updated retail prices.
+
+verify:live creates a uniquely identified, explicitly named test station, submits a report to the public API without auth headers, verifies the price through a live viewport read, and deletes the station with cascading reports in finally. It verifies the station deletion. SITE_URL can select another deployment; by default it uses pump-scout-nine.vercel.app. The test briefly exposes a clearly labeled test listing and consumes normal submission rate limits. Run once at a time; avoid interrupting it. If cleanup fails it exits with an error; the test rows have source=test and names beginning AUTOMATED TEST. No real station prices are changed. The normal daily rate-limit record is not removed.
+
+Current execution status: local tests pass, but the nationwide import and live submission verification have not run successfully. Local server credentials and an authorized bulk endpoint are missing. No test station has been created.

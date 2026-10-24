@@ -8,7 +8,9 @@
     "build": "tsc -b && vite build",
     "preview": "vite preview --host 127.0.0.1",
     "test": "node --experimental-strip-types --test tests/*.test.ts",
-    "test:scale": "node scripts/benchmark-clusters.mjs"
+    "test:scale": "node scripts/benchmark-clusters.mjs",
+    "stations:sync": "node --env-file=.env.local scripts/sync-stations.mjs",
+    "verify:live": "node --env-file=.env.local scripts/verify-live-submission.mjs"
   },
   "dependencies": {
     "@tailwindcss/vite": "4.3.3",
