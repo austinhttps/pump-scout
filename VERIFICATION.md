@@ -35,3 +35,5 @@ The performance fixture is synthetic, used only by scripts/benchmark-clusters.mj
 - Source, migrations, importer, test scripts, and pinned library licenses are packaged together.
 - The browser-visible CARTO key remains outside tracked source, in local/Vercel environment configuration.
 - No Supabase users, external accounts, or production database records were deleted or changed; this environment had no configured application database.
+
+Additional deployed UI checks: Hawaii shortcut navigated correctly; E85 selection and Shell brand favorite remained selected after reload; zero login controls were present; mobile content width was 375 px in a 390 px viewport (no horizontal overflow).
