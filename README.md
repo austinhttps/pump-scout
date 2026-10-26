@@ -6,7 +6,7 @@ PumpScout is for any person who is interested to see fuel prices either near the
 
 PumpScout was created with ChatGPT Codex and Google Gemini, with prompts spoken through Wispr Flow's Windows 11 app integration. Wispr Flow helped consolidate my ideas into actionable prompts and jot down notes to track the project's progress.
 
-Production: [https://pump-scout-nine.vercel.app/](https://gas-map-price-tracker.vercel.app/)
+Production: [https://gas-map-price-tracker.vercel.app/](https://gas-map-price-tracker.vercel.app/)
 
 ## What changed
 - No signup, login, user sessions, account profiles, protected routes, or authentication SDK.
