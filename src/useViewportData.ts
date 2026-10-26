@@ -4,11 +4,12 @@ import {loadStationPage} from './backend'
 import {viewportKey} from './geo'
 import {collectViewport} from './viewportSnapshot'
 const initial:StationPage={stations:[],clusters:[],nextCursor:null,sharedReports:false,overview:true,source:'openstreetmap'}
-export function useViewportData(view:Viewport){
+export function useViewportData(view:Viewport,enabled=true){
  const [snapshot,setSnapshot]=useState(initial),[settled,setSettled]=useState(false)
  const [loading,setLoading]=useState(true),[error,setError]=useState(''),[revision,setRevision]=useState(0)
  const request=useRef(0),key=viewportKey(view.bounds,view.zoom)
  useEffect(()=>{
+  if(!enabled)return
   const controller=new AbortController(),id=++request.current
   setLoading(true);setError('')
   const timer=setTimeout(async()=>{
@@ -20,7 +21,7 @@ export function useViewportData(view:Viewport){
    finally{if(!controller.signal.aborted&&id===request.current)setLoading(false)}
   },220)
   return()=>{clearTimeout(timer);controller.abort()}
- },[key,revision])
+ },[key,revision,enabled])
  const refresh=useCallback(()=>setRevision(v=>v+1),[])
  return {...snapshot,notice:snapshot.notice||'',settled,loading,error,refresh}
 }

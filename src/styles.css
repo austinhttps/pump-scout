@@ -36,3 +36,5 @@
 /* Keep content changes from resizing Leaflet and triggering another viewport fetch. */
 @media(min-width:761px){.workspace{height:690px}.map-column,.station-panel{min-height:0;height:100%}.station-panel{overflow:hidden}}
 .station-list{scrollbar-gutter:stable}
+
+.benchmark,.demo-controls{display:flex;align-items:center;gap:16px;flex-wrap:wrap;padding:16px;margin:16px 0;border:1px solid var(--border,#ddd);border-radius:12px}.benchmark p{font-size:12px;margin:4px 0}.benchmark select{padding:8px;color:inherit;background:var(--surface,#fff)}.benchmark a{color:inherit;text-decoration:underline}.demo-controls strong{color:#a35400}
