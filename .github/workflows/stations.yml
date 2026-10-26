@@ -1,0 +1,37 @@
+name: Update station directory
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '23 9 * * *'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: station-directory-production
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+      - name: Set up Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: '24'
+          package-manager-cache: false
+      - name: Download and import fresh nationwide stations
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          OVERPASS_URL: ${{ secrets.OVERPASS_URL }}
+          IMPORT_DELAY_MS: '45000'
+        run: node scripts/sync-stations.mjs --refresh
+      - name: Record successful update
+        run: echo "Nationwide station directory import completed. Existing fuel-price reports were preserved." >> "$GITHUB_STEP_SUMMARY"
