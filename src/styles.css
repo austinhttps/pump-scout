@@ -33,3 +33,6 @@
 @media(max-width:760px){.viewport-search-hint{display:none}.region-shortcuts button{padding:5px 7px;font-size:9px}.map-topline strong{max-width:135px}.nationwide-filters{align-items:flex-start}.map-updating{top:69px;left:14px}.station-cluster{width:60px;height:60px}.header-actions{margin-left:auto}}
 
 
+/* Keep content changes from resizing Leaflet and triggering another viewport fetch. */
+@media(min-width:761px){.workspace{height:690px}.map-column,.station-panel{min-height:0;height:100%}.station-panel{overflow:hidden}}
+.station-list{scrollbar-gutter:stable}
