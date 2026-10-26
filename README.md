@@ -8,6 +8,8 @@ PumpScout was created with ChatGPT Codex and Google Gemini, with prompts spoken 
 
 Production: [https://gas-map-price-tracker.vercel.app/](https://gas-map-price-tracker.vercel.app/)
 
+Demo Video: [https://youtu.be/BSyHkxASGMQ](https://youtu.be/BSyHkxASGMQ)
+
 ## What changed
 - No signup, login, user sessions, account profiles, protected routes, or authentication SDK.
 - Fuel choice, favorite brands, recent searches, bookmarks, theme, and optional report nickname use browser local storage.
