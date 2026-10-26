@@ -1,6 +1,12 @@
-# PumpScout 2 — public U.S. gas-price map
+# PumpScout — crowdsourced U.S. gas-price map
 
-Production: https://pump-scout-nine.vercel.app/
+Many times when preparing for a road trip, it may be hard to easily calculate the amount of money needed to spend on fuel. PumpScout is a crowdsourced U.S. gas map price tracker that allows visitors to voluntarily report gas prices at stations near them. The site allows for an interactive map with saved stations and anonymous price reporting. 
+
+PumpScout is for any person who is interested to see fuel prices either near them or across the country, whether for leisure or trip planning.
+
+PumpScout was created with ChatGPT Codex and Google Gemini, with prompts spoken through Wispr Flow's Windows 11 app integration. Wispr Flow helped consolidate my ideas into actionable prompts and jot down notes to track the project's progress.
+
+Production: [https://pump-scout-nine.vercel.app/](https://gas-map-price-tracker.vercel.app/)
 
 ## What changed
 - No signup, login, user sessions, account profiles, protected routes, or authentication SDK.
