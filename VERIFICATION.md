@@ -1,4 +1,4 @@
-# Nationwide refactor verification — October 24, 2026
+# Nationwide refactor verification - October 24, 2026
 
 ## Passed
 - Strict TypeScript check and Vite production build.
